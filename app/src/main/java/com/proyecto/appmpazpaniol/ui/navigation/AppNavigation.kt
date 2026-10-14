@@ -7,7 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import com.proyecto.appmpazpaniol.model.Equipo
 import com.proyecto.appmpazpaniol.ui.screens.CatalogoScreen
 import com.proyecto.appmpazpaniol.ui.screens.SolicitudScreen
-
+import com.proyecto.appmpazpaniol.ui.screens.MisSolicitudesScreen
 /**
  * Contenedor principal de navegacion declarativa para la app MPAZ Pañol.
  * Gestiona el intercambio de pantallas mediante el NavController.
@@ -55,6 +55,15 @@ fun AppNavigation() {
                 },
                 onVolver = {
                     // Cancela y regresa a la pantalla anterior
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Ruta 3: Historial del Solicitante
+        composable(route = Screen.MisSolicitudes.route) {
+            MisSolicitudesScreen(
+                onVolver = {
                     navController.popBackStack()
                 }
             )
