@@ -6,43 +6,34 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-
-/**
- * Modelo temporal para representar solicitudes en el panel de administración.
- */
-data class SolicitudAdminMock(
-    val id: String,
-    val solicitante: String,
-    val cargo: String,
-    val equipo: String,
-    val sala: String,
-    val fecha: String,
-    val horaInicio: String,
-    val horaDevolucion: String,
-    val estado: String // Pendiente, Aceptada, Rechazada, Entregada, Devuelta
-)
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.proyecto.appmpazpaniol.model.SolicitudAdmin
+import com.proyecto.appmpazpaniol.viewmodel.AdminViewModel
 
 /**
  * Muestra solicitudes simuladas y el acceso a la gestión de inventario.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminScreen(onGestionInventario: () -> Unit) {
+fun AdminScreen(
+    onGestionInventario: () -> Unit,
+    viewModel: AdminViewModel = viewModel()
+) {
     val context = LocalContext.current
-    // pendiente: reemplazar por datos reales de Room
-    val listaSolicitudes = listOf(
-        SolicitudAdminMock("1", "Profesor Prueba 1", "Docente", "Proyector Epson", "Sala 101", "20/10/2026", "09:00", "12:00", "Pendiente"),
-        SolicitudAdminMock("2", "Profesor Prueba 2", "Docente", "Notebook Lenovo", "Sala 204", "20/10/2026", "10:00", "13:00", "Aceptada"),
-        SolicitudAdminMock("3", "Profesor Prueba 3", "Docente", "Cámara Canon", "Sala 305", "21/10/2026", "08:30", "11:30", "Rechazada"),
-        SolicitudAdminMock("4", "Profesor Prueba 4", "Docente", "Micrófono inalámbrico", "Sala 112", "21/10/2026", "14:00", "16:00", "Entregada"),
-        SolicitudAdminMock("5", "Profesor Prueba 5", "Docente", "Parlante portátil", "Sala 208", "22/10/2026", "09:30", "12:30", "Devuelta")
-    )
+    val state = viewModel.uiState
+    var idAceptar by remember { mutableStateOf("") }
+    var idRechazar by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -80,15 +71,11 @@ fun AdminScreen(onGestionInventario: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                items(listaSolicitudes) { solicitud ->
+                items(state.solicitudes) { solicitud ->
                     SolicitudAdminCard(
                         solicitud = solicitud,
-                        onAceptar = {
-                            Toast.makeText(context, "Solicitud aceptada", Toast.LENGTH_SHORT).show()
-                        },
-                        onRechazar = {
-                            Toast.makeText(context, "Solicitud rechazada", Toast.LENGTH_SHORT).show()
-                        },
+                        onAceptar = { idAceptar = solicitud.id },
+                        onRechazar = { idRechazar = solicitud.id },
                         onEntregar = {
                             Toast.makeText(context, "Equipo entregado", Toast.LENGTH_SHORT).show()
                         },
@@ -97,6 +84,81 @@ fun AdminScreen(onGestionInventario: () -> Unit) {
                         }
                     )
                 }
+            }
+
+            if (idAceptar != "") {
+                AlertDialog(
+                    onDismissRequest = { idAceptar = "" },
+                    title = { Text("Aceptar solicitud") },
+                    text = { Text("¿Confirmas que quieres aceptar la solicitud $idAceptar?") },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                viewModel.onAceptarClick(idAceptar)
+                                Toast.makeText(context, "Solicitud aceptada", Toast.LENGTH_SHORT).show()
+                                idAceptar = ""
+                            }
+                        ) {
+                            Text("Confirmar")
+                        }
+                    },
+                    dismissButton = {
+                        OutlinedButton(onClick = { idAceptar = "" }) {
+                            Text("Cancelar")
+                        }
+                    }
+                )
+            }
+
+            if (idRechazar != "") {
+                AlertDialog(
+                    onDismissRequest = {
+                        viewModel.onCancelarRechazo()
+                        idRechazar = ""
+                    },
+                    title = { Text("Rechazar solicitud") },
+                    text = {
+                        Column {
+                            Text("Escribe la justificación del rechazo (obligatoria).")
+                            OutlinedTextField(
+                                value = state.motivoRechazo,
+                                onValueChange = { viewModel.onMotivoRechazoChanged(it) },
+                                label = { Text("Justificación del rechazo") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            if (state.motivoRechazoError != null) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = state.motivoRechazoError,
+                                    color = Color.Red,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                viewModel.onRechazarClick(idRechazar) {
+                                    Toast.makeText(context, "Solicitud rechazada", Toast.LENGTH_SHORT).show()
+                                    idRechazar = ""
+                                }
+                            }
+                        ) {
+                            Text("Confirmar rechazo")
+                        }
+                    },
+                    dismissButton = {
+                        OutlinedButton(
+                            onClick = {
+                                viewModel.onCancelarRechazo()
+                                idRechazar = ""
+                            }
+                        ) {
+                            Text("Cancelar")
+                        }
+                    }
+                )
             }
         }
     }
@@ -107,7 +169,7 @@ fun AdminScreen(onGestionInventario: () -> Unit) {
  */
 @Composable
 fun SolicitudAdminCard(
-    solicitud: SolicitudAdminMock,
+    solicitud: SolicitudAdmin,
     onAceptar: () -> Unit,
     onRechazar: () -> Unit,
     onEntregar: () -> Unit,
@@ -149,6 +211,12 @@ fun SolicitudAdminCard(
                 text = "Fecha: ${solicitud.fecha} | ${solicitud.horaInicio} a ${solicitud.horaDevolucion}",
                 style = MaterialTheme.typography.bodySmall
             )
+            if (solicitud.estado == "Rechazada") {
+                Text(
+                    text = "Motivo: ${solicitud.motivoRechazo}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
 
             when (solicitud.estado) {
                 "Pendiente" -> Row(
@@ -218,5 +286,8 @@ fun EtiquetaEstadoAdmin(estado: String) {
 @Preview(showBackground = true)
 @Composable
 fun AdminScreenPreview() {
-    AdminScreen(onGestionInventario = {})
+    AdminScreen(
+        onGestionInventario = {},
+        viewModel = AdminViewModel()
+    )
 }
