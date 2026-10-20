@@ -19,3 +19,4 @@ data class SolicitudEntity(
     val motivo: String,            // Motivo del préstamo ingresado por el usuario
     val estado: String = "Pendiente" // Estado: "Pendiente", "Aprobado", "Rechazado"
 )
+//Se verifica el funcionamiento en este de Solicitud Entity y SolicitudDao
