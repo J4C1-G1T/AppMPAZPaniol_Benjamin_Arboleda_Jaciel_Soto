@@ -19,3 +19,4 @@ class PaniolRepository(private val solicitudDao: SolicitudDao) {
         solicitudDao.actualizarEstadoSolicitud(id, nuevoEstado)
     }
 }
+//Se confirma que los metodos del Solicitante de paniolRepository funcionan
