@@ -12,18 +12,6 @@ class PaniolRepository(
     private val equipoDao: EquipoDao
 ) {
 
-    // Expone la lista reactiva de solicitudes guardadas
-    val todasLasSolicitudes: Flow<List<SolicitudEntity>> = solicitudDao.obtenerTodasLasSolicitudes()
-
-    // Llama al DAO de forma asíncrona mediante corutinas
-    suspend fun guardarSolicitud(solicitud: SolicitudEntity) {
-        solicitudDao.insertarSolicitud(solicitud)
-    }
-
-    suspend fun cambiarEstadoSolicitud(id: Int, nuevoEstado: String) {
-        solicitudDao.actualizarEstadoSolicitud(id, nuevoEstado)
-    }
-
     // Obtiene todos los equipos guardados.
     suspend fun obtenerEquipos(): List<EquipoEntity> {
         return equipoDao.getAllEquipos()
@@ -52,5 +40,17 @@ class PaniolRepository(
     // Actualiza el stock disponible de un equipo.
     suspend fun actualizarStockDisponible(id: String, stockDisponible: Int) {
         return equipoDao.updateStockDisponible(id, stockDisponible)
+    }
+
+    // Expone la lista reactiva de solicitudes guardadas
+    val todasLasSolicitudes: Flow<List<SolicitudEntity>> = solicitudDao.obtenerTodasLasSolicitudes()
+
+    // Llama al DAO de forma asíncrona mediante corutinas
+    suspend fun guardarSolicitud(solicitud: SolicitudEntity) {
+        solicitudDao.insertarSolicitud(solicitud)
+    }
+
+    suspend fun cambiarEstadoSolicitud(id: Int, nuevoEstado: String) {
+        solicitudDao.actualizarEstadoSolicitud(id, nuevoEstado)
     }
 }
