@@ -5,7 +5,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.proyecto.appmpazpaniol.model.Equipo
+import com.proyecto.appmpazpaniol.ui.screens.AdminScreen
 import com.proyecto.appmpazpaniol.ui.screens.CatalogoScreen
+import com.proyecto.appmpazpaniol.ui.screens.GestionInventarioScreen
 import com.proyecto.appmpazpaniol.ui.screens.SolicitudScreen
 import com.proyecto.appmpazpaniol.ui.screens.MisSolicitudesScreen
 /**
@@ -63,6 +65,24 @@ fun AppNavigation() {
         // Ruta 3: Historial del Solicitante
         composable(route = Screen.MisSolicitudes.route) {
             MisSolicitudesScreen(
+                onVolver = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Ruta: Panel de Administración
+        composable(route = Screen.PanelAdmin.route) {
+            AdminScreen(
+                onGestionInventario = {
+                    navController.navigate(Screen.GestionInventario.route)
+                }
+            )
+        }
+
+        // Ruta: Gestión de Inventario
+        composable(route = Screen.GestionInventario.route) {
+            GestionInventarioScreen(
                 onVolver = {
                     navController.popBackStack()
                 }
