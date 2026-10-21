@@ -10,6 +10,8 @@ import com.proyecto.appmpazpaniol.ui.screens.CatalogoScreen
 import com.proyecto.appmpazpaniol.ui.screens.GestionInventarioScreen
 import com.proyecto.appmpazpaniol.ui.screens.SolicitudScreen
 import com.proyecto.appmpazpaniol.ui.screens.MisSolicitudesScreen
+import com.proyecto.appmpazpaniol.ui.screens.SolicitudScreen
+
 /**
  * Contenedor principal de navegacion declarativa para la app MPAZ Pañol.
  * Gestiona el intercambio de pantallas mediante el NavController.
@@ -72,6 +74,7 @@ fun AppNavigation() {
         }
 
         // Ruta: Panel de Administración
+        // Ruta 4: Panel de Administración
         composable(route = Screen.PanelAdmin.route) {
             AdminScreen(
                 onGestionInventario = {
@@ -81,6 +84,7 @@ fun AppNavigation() {
         }
 
         // Ruta: Gestión de Inventario
+        // Ruta 5: Gestión de Inventario
         composable(route = Screen.GestionInventario.route) {
             GestionInventarioScreen(
                 onVolver = {
