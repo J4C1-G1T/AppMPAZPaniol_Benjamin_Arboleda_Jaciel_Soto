@@ -28,9 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.proyecto.appmpazpaniol.viewmodel.LoginViewModel
 
-/**
- * Presenta el formulario de inicio de sesión y sus errores de validación.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(

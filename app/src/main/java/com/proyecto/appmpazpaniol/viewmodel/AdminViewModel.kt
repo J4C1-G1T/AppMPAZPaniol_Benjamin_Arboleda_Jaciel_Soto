@@ -8,9 +8,6 @@ import com.proyecto.appmpazpaniol.model.AdminModel
 import com.proyecto.appmpazpaniol.model.EstadoSolicitud
 import com.proyecto.appmpazpaniol.model.SolicitudAdmin
 
-/**
- * Gestiona en memoria las solicitudes y sus cambios de estado.
- */
 class AdminViewModel : ViewModel() {
     // pendiente: reemplazar por datos reales de Room
     var uiState by mutableStateOf(
@@ -77,9 +74,6 @@ class AdminViewModel : ViewModel() {
     )
         private set
 
-    /**
-     * Actualiza la justificación del rechazo y limpia su error.
-     */
     fun onMotivoRechazoChanged(motivo: String) {
         uiState = uiState.copy(
             motivoRechazo = motivo,
@@ -87,9 +81,6 @@ class AdminViewModel : ViewModel() {
         )
     }
 
-    /**
-     * Limpia el motivo de rechazo y su error.
-     */
     fun onCancelarRechazo() {
         uiState = uiState.copy(
             motivoRechazo = "",
@@ -105,6 +96,7 @@ class AdminViewModel : ViewModel() {
         }
     }
 
+    // Solo aplica una transición cuando coincide el estado actual esperado.
     private fun cambiarEstado(
         id: String,
         estadoActual: String,
@@ -122,17 +114,11 @@ class AdminViewModel : ViewModel() {
         )
     }
 
-    /**
-     * Acepta una solicitud pendiente.
-     */
     fun onAceptarClick(id: String) {
         // pendiente: descontar stock al aceptar y recuperarlo al devolver (requiere Room/PaniolRepository)
         cambiarEstado(id, EstadoSolicitud.PENDIENTE, EstadoSolicitud.ACEPTADA)
     }
 
-    /**
-     * Rechaza una solicitud pendiente si tiene una justificación válida.
-     */
     fun onRechazarClick(id: String, onSuccess: () -> Unit) {
         val error = validateMotivoRechazo(uiState.motivoRechazo)
         if (error != null) {
@@ -153,17 +139,11 @@ class AdminViewModel : ViewModel() {
         onSuccess()
     }
 
-    /**
-     * Marca como entregada una solicitud aceptada.
-     */
     fun onEntregarClick(id: String) {
         // pendiente: guardar fecha y hora de entrega y devolución.
         cambiarEstado(id, EstadoSolicitud.ACEPTADA, EstadoSolicitud.ENTREGADA)
     }
 
-    /**
-     * Marca como devuelta una solicitud entregada.
-     */
     fun onDevolverClick(id: String) {
         // pendiente: descontar stock al aceptar y recuperarlo al devolver (requiere Room/PaniolRepository)
         cambiarEstado(id, EstadoSolicitud.ENTREGADA, EstadoSolicitud.DEVUELTA)

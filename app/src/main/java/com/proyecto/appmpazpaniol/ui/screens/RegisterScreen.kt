@@ -30,9 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.proyecto.appmpazpaniol.viewmodel.RegisterViewModel
 
-/**
- * Presenta el formulario de registro y sus errores de validación.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(

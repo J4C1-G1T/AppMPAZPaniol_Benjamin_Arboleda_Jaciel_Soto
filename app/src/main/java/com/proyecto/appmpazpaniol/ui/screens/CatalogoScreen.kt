@@ -11,16 +11,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.proyecto.appmpazpaniol.model.Equipo
 
-/**
- * Pantalla que muestra el catálogo de equipos disponibles en el Pañol (MPAZ Pañol).
- * Utiliza una LazyColumn para renderizar la lista de forma eficiente.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogoScreen(
     onEquipoSeleccionado: (Equipo) -> Unit
 ) {
-    // Lista de equipos simulados (Mock Data) para probar el flujo de la UI
     val listaEquipos = listOf(
         Equipo(
             id = "1",
@@ -80,7 +75,6 @@ fun CatalogoScreen(
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            // LazyColumn reemplaza el RecyclerView tradicional de Android para listas de alto rendimiento
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxSize()
@@ -96,9 +90,6 @@ fun CatalogoScreen(
     }
 }
 
-/**
- * Componente Tarjeta para renderizar cada equipo de forma individual.
- */
 @Composable
 fun EquipoItemCard(
     equipo: Equipo,

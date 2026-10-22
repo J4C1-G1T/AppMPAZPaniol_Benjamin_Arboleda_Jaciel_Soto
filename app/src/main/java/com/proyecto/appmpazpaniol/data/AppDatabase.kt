@@ -9,10 +9,6 @@ import com.proyecto.appmpazpaniol.data.local.dao.UsuarioDao
 import com.proyecto.appmpazpaniol.data.local.entity.EquipoEntity
 import com.proyecto.appmpazpaniol.data.local.entity.UsuarioEntity
 
-/**
- * Base de Datos Room de la aplicación MPAZ Pañol.
- */
-// versión subida al agregar UsuarioEntity
 @Database(
     entities = [SolicitudEntity::class, EquipoEntity::class, UsuarioEntity::class],
     version = 3,
@@ -30,9 +26,6 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        /**
-         * Retorna la instancia única Singleton de la base de datos.
-         */
         fun obtenerBaseDatos(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(

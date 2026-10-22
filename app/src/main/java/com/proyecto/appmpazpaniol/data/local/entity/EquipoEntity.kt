@@ -16,9 +16,6 @@ data class EquipoEntity(
     val estado: String,
     val ubicacionFisica: String
 ) {
-    /**
-     * Convierte esta entidad persistida al modelo de equipo de la aplicación.
-     */
     fun toEquipo(): Equipo {
         return Equipo(
             id = id,
