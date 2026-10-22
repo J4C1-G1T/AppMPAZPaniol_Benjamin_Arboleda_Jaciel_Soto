@@ -1,8 +1,5 @@
 package com.proyecto.appmpazpaniol.model
 
-/**
- * Representa una solicitud de préstamo gestionada por administración.
- */
 data class SolicitudAdmin(
     val id: String,
     val solicitante: String,

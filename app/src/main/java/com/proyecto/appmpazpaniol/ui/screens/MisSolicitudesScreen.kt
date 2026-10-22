@@ -10,27 +10,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-/**
- * Modelo de datos temporal para representar una solicitud en el historial del usuario.
- */
 data class SolicitudHistorialMock(
     val id: String,
     val nombreEquipo: String,
     val fechaReserva: String,
     val horasSolicitadas: Int,
-    val estado: String // Estados: "Pendiente", "Aprobado", "Rechazado"
+    val estado: String
 )
 
-/**
- * Pantalla de Historial de Solicitudes ("Mis Solicitudes").
- * Permite al docente visualizar el estado actual de todas sus peticiones de préstamo.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MisSolicitudesScreen(
     onVolver: () -> Unit
 ) {
-    // Datos simulados (Mock Data) para probar la visualización de la UI
     val listaHistorial = listOf(
         SolicitudHistorialMock("1", "Proyector Epson EB-X06", "13/10/2026", 3, "Pendiente"),
         SolicitudHistorialMock("2", "Cámara Canon EOS Rebel T7", "10/10/2026", 4, "Aprobado"),
@@ -65,9 +57,6 @@ fun MisSolicitudesScreen(
     }
 }
 
-/**
- * Tarjeta individual para renderizar el detalle de una solicitud pasada.
- */
 @Composable
 fun ItemSolicitudCard(solicitud: SolicitudHistorialMock) {
     Card(
@@ -90,7 +79,6 @@ fun ItemSolicitudCard(solicitud: SolicitudHistorialMock) {
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                // Componente visual para la etiqueta de estado de la solicitud
                 EtiquetaEstado(estado = solicitud.estado)
             }
 
@@ -106,9 +94,6 @@ fun ItemSolicitudCard(solicitud: SolicitudHistorialMock) {
     }
 }
 
-/**
- * Asigna un color distintivo según el estado de la solicitud (Aprobado = Verde, Pendiente = Naranja, Rechazado = Rojo).
- */
 @Composable
 fun EtiquetaEstado(estado: String) {
     val (colorFondo, colorTexto) = when (estado) {

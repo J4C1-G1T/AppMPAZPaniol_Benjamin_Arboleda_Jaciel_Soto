@@ -9,10 +9,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.proyecto.appmpazpaniol.model.Equipo
 
-/**
- * Pantalla para la creación y confirmación de solicitudes de préstamo.
- * Permite al docente/solicitante seleccionar las horas de uso y validar la regla de 3 horas.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SolicitudScreen(
@@ -20,7 +16,7 @@ fun SolicitudScreen(
     onConfirmarSolicitud: (horasReserva: Int) -> Unit,
     onVolver: () -> Unit
 ) {
-    var horasReserva by remember { mutableIntStateOf(3) } // Regla de negocio: mínimo 3 horas
+    var horasReserva by remember { mutableIntStateOf(3) }
     var motivoUso by remember { mutableStateOf("") }
 
     Scaffold(
@@ -40,7 +36,6 @@ fun SolicitudScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Detalle del Equipo Seleccionado
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(text = equipo.nombre, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -49,7 +44,6 @@ fun SolicitudScreen(
                 }
             }
 
-            // Selector de Horas de Anticipación / Uso
             Text(text = "Anticipación de la Reserva (Mínimo 3 horas)", style = MaterialTheme.typography.labelLarge)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -67,7 +61,6 @@ fun SolicitudScreen(
                 }
             }
 
-            // Campo de texto para el motivo de uso
             OutlinedTextField(
                 value = motivoUso,
                 onValueChange = { motivoUso = it },
@@ -77,7 +70,6 @@ fun SolicitudScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Botones de acción
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)

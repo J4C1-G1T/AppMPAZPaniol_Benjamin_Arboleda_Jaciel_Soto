@@ -1,6 +1,7 @@
 package com.proyecto.appmpazpaniol.viewmodel
 
 import android.content.Context
+import android.util.Patterns
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -35,7 +36,7 @@ class LoginViewModel : ViewModel() {
     private fun validateEmail(email: String): String? {
         if (email.isBlank()) {
             return "El correo es obligatorio."
-        } else if (!email.contains("@") || !email.contains(".")) {
+        } else if (!Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()) {
             return "Ingresa un correo válido."
         } else {
             return null
@@ -66,6 +67,7 @@ class LoginViewModel : ViewModel() {
             return
         }
 
+        val email = uiState.email.trim()
         viewModelScope.launch {
             val db = AppDatabase.obtenerBaseDatos(context)
             if (db.usuarioDao().getUserByEmail(AdminCuenta.CORREO) == null) {
@@ -78,7 +80,7 @@ class LoginViewModel : ViewModel() {
                 )
             }
 
-            val user = db.usuarioDao().getUserByEmail(uiState.email)
+            val user = db.usuarioDao().getUserByEmail(email)
             if (user != null && user.password == uiState.password) {
                 uiState = uiState.copy(errorMessage = null)
                 if (user.email == AdminCuenta.CORREO) {

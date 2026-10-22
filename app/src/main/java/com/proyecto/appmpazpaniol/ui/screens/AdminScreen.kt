@@ -21,9 +21,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.proyecto.appmpazpaniol.model.SolicitudAdmin
 import com.proyecto.appmpazpaniol.viewmodel.AdminViewModel
 
-/**
- * Muestra solicitudes simuladas y el acceso a la gestión de inventario.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminScreen(
@@ -164,9 +161,6 @@ fun AdminScreen(
     }
 }
 
-/**
- * Presenta los datos de una solicitud y las acciones disponibles según su estado.
- */
 @Composable
 fun SolicitudAdminCard(
     solicitud: SolicitudAdmin,
@@ -253,9 +247,6 @@ fun SolicitudAdminCard(
     }
 }
 
-/**
- * Muestra una etiqueta con colores asociados al estado de la solicitud.
- */
 @Composable
 fun EtiquetaEstadoAdmin(estado: String) {
     val (colorFondo, colorTexto) = when (estado) {
@@ -280,9 +271,6 @@ fun EtiquetaEstadoAdmin(estado: String) {
     }
 }
 
-/**
- * Vista previa del panel de administración.
- */
 @Preview(showBackground = true)
 @Composable
 fun AdminScreenPreview() {

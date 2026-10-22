@@ -1,6 +1,7 @@
 package com.proyecto.appmpazpaniol.viewmodel
 
 import android.content.Context
+import android.util.Patterns
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -12,9 +13,6 @@ import com.proyecto.appmpazpaniol.model.AdminCuenta
 import com.proyecto.appmpazpaniol.model.RegisterModel
 import kotlinx.coroutines.launch
 
-/**
- * Gestiona los datos, la validación y el registro de una cuenta de usuario.
- */
 class RegisterViewModel : ViewModel() {
     var uiState by mutableStateOf(RegisterModel())
         private set
@@ -62,9 +60,9 @@ class RegisterViewModel : ViewModel() {
     private fun validateEmail(email: String): String? {
         if (email.isBlank()) {
             return "El correo es obligatorio."
-        } else if (!email.contains("@") || !email.contains(".")) {
+        } else if (!Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()) {
             return "Ingresa un correo válido."
-        } else if (email == AdminCuenta.CORREO) {
+        } else if (email.trim() == AdminCuenta.CORREO) {
             return "Este correo está reservado."
         } else {
             return null
@@ -113,15 +111,16 @@ class RegisterViewModel : ViewModel() {
             return
         }
 
+        val email = uiState.email.trim()
         viewModelScope.launch {
             val db = AppDatabase.obtenerBaseDatos(context)
-            if (db.usuarioDao().getUserByEmail(uiState.email) != null) {
+            if (db.usuarioDao().getUserByEmail(email) != null) {
                 uiState = uiState.copy(errorMessage = "El correo ya está registrado.")
             } else {
                 db.usuarioDao().registerUser(
                     UsuarioEntity(
                         name = uiState.name,
-                        email = uiState.email,
+                        email = email,
                         password = uiState.password
                     )
                 )

@@ -19,9 +19,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.proyecto.appmpazpaniol.model.Equipo
 
-/**
- * Muestra un formulario de equipos y un listado simulado del inventario.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GestionInventarioScreen(onVolver: () -> Unit) {
@@ -207,9 +204,6 @@ fun GestionInventarioScreen(onVolver: () -> Unit) {
     }
 }
 
-/**
- * Presenta los datos de un equipo y las acciones visuales de inventario.
- */
 @Composable
 fun EquipoInventarioCard(
     equipo: Equipo,
@@ -266,9 +260,6 @@ fun EquipoInventarioCard(
     }
 }
 
-/**
- * Vista previa de la pantalla de gestión de inventario.
- */
 @Preview(showBackground = true)
 @Composable
 fun GestionInventarioScreenPreview() {
