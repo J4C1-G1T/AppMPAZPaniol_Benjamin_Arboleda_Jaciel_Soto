@@ -53,8 +53,8 @@ class LoginViewModel : ViewModel() {
 
     fun onLoginClick(
         context: Context,
-        onLoginAdmin: () -> Unit,
-        onLoginUsuario: () -> Unit
+        onLoginAdmin: (String, String) -> Unit,
+        onLoginUsuario: (String, String) -> Unit
     ) {
         val emailError = validateEmail(uiState.email)
         val passwordError = validatePassword(uiState.password)
@@ -84,9 +84,9 @@ class LoginViewModel : ViewModel() {
             if (user != null && user.password == uiState.password) {
                 uiState = uiState.copy(errorMessage = null)
                 if (user.email == AdminCuenta.CORREO) {
-                    onLoginAdmin()
+                    onLoginAdmin(user.name, user.email)
                 } else {
-                    onLoginUsuario()
+                    onLoginUsuario(user.name, user.email)
                 }
             } else {
                 uiState = uiState.copy(errorMessage = "Correo o contraseña incorrectos.")
