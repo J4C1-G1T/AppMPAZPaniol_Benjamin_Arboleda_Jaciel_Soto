@@ -5,10 +5,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.proyecto.appmpazpaniol.model.Equipo
+import com.proyecto.appmpazpaniol.ui.screens.LoginScreen
+import com.proyecto.appmpazpaniol.ui.screens.RegisterScreen
 import com.proyecto.appmpazpaniol.ui.screens.AdminScreen
 import com.proyecto.appmpazpaniol.ui.screens.CatalogoScreen
 import com.proyecto.appmpazpaniol.ui.screens.GestionInventarioScreen
-import com.proyecto.appmpazpaniol.ui.screens.SolicitudScreen
 import com.proyecto.appmpazpaniol.ui.screens.MisSolicitudesScreen
 import com.proyecto.appmpazpaniol.ui.screens.SolicitudScreen
 
@@ -21,11 +22,41 @@ fun AppNavigation() {
     // NavController rastrea la pila de navegacion (pantallas anteriores y actuales)
     val navController = rememberNavController()
 
-    // NavHost define el grafo de navegacion e inicia en el Catalogo
+    // NavHost define el grafo de navegación e inicia en Login
     NavHost(
         navController = navController,
-        startDestination = Screen.Catalogo.route
+        startDestination = Screen.Login.route
     ) {
+        // Ruta: Login
+        composable(route = Screen.Login.route) {
+            LoginScreen(
+                onNavigateToRegister = {
+                    navController.navigate(Screen.Register.route)
+                },
+                onLoginAdmin = {
+                    navController.navigate(Screen.PanelAdmin.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
+                onLoginUsuario = {
+                    navController.navigate(Screen.Catalogo.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // Ruta: Registro
+        composable(route = Screen.Register.route) {
+            RegisterScreen(
+                onNavigateToLogin = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         // Ruta 1: Catálogo de Equipos
         composable(route = Screen.Catalogo.route) {
             CatalogoScreen(
@@ -92,5 +123,6 @@ fun AppNavigation() {
                 }
             )
         }
+
     }
 }

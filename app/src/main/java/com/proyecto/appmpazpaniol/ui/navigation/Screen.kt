@@ -13,4 +13,8 @@ sealed class Screen(val route: String) {
     // Rutas del Rol Administrador / Encargado de Pañol (Benjamín)
     data object PanelAdmin : Screen("panel_admin_screen")
     data object GestionInventario : Screen("gestion_inventario_screen")
+
+    // Rutas de autenticación (Benjamín)
+    data object Login : Screen("login_screen")
+    data object Register : Screen("register_screen")
 }
