@@ -5,15 +5,17 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.proyecto.appmpazpaniol.data.local.dao.EquipoDao
+import com.proyecto.appmpazpaniol.data.local.dao.UsuarioDao
 import com.proyecto.appmpazpaniol.data.local.entity.EquipoEntity
+import com.proyecto.appmpazpaniol.data.local.entity.UsuarioEntity
 
 /**
  * Base de Datos Room de la aplicación MPAZ Pañol.
  */
-// versión subida al agregar EquipoEntity
+// versión subida al agregar UsuarioEntity
 @Database(
-    entities = [SolicitudEntity::class, EquipoEntity::class],
-    version = 2,
+    entities = [SolicitudEntity::class, EquipoEntity::class, UsuarioEntity::class],
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -21,6 +23,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun solicitudDao(): SolicitudDao
 
     abstract fun equipoDao(): EquipoDao
+
+    abstract fun usuarioDao(): UsuarioDao
 
     companion object {
         @Volatile
