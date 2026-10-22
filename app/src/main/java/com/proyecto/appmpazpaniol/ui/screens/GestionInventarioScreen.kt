@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -45,6 +47,11 @@ fun GestionInventarioScreen(onVolver: () -> Unit) {
         topBar = {
             TopAppBar(
                 title = { Text("Gestión de Inventario") },
+                navigationIcon = {
+                    IconButton(onClick = onVolver) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver al panel")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -57,15 +64,6 @@ fun GestionInventarioScreen(onVolver: () -> Unit) {
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            OutlinedButton(
-                onClick = onVolver,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Volver al panel")
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.weight(1f)

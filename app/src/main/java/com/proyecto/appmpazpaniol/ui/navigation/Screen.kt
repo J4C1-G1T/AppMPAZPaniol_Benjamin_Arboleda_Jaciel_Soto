@@ -7,6 +7,8 @@ sealed class Screen(val route: String) {
 
     data object PanelAdmin : Screen("panel_admin_screen")
     data object GestionInventario : Screen("gestion_inventario_screen")
+    data object Perfil : Screen("perfil_screen")
+    data object Ajustes : Screen("ajustes_screen")
 
     data object Login : Screen("login_screen")
     data object Register : Screen("register_screen")

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
@@ -43,6 +44,11 @@ fun RegisterScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Registro de Usuario") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateToLogin) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver al inicio de sesión")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -59,7 +65,8 @@ fun RegisterScreen(
         ) {
             Text(
                 "R e g i s t r o",
-                style = MaterialTheme.typography.headlineMedium
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.primary
             )
 
             Spacer(modifier = Modifier.height(24.dp))
