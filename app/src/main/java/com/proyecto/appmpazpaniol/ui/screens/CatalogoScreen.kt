@@ -3,6 +3,9 @@ package com.proyecto.appmpazpaniol.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -13,14 +16,17 @@ import com.proyecto.appmpazpaniol.model.Equipo
 
 /**
  * Pantalla que muestra el catálogo de equipos disponibles en el Pañol (MPAZ Pañol).
- * Utiliza una LazyColumn para renderizar la lista de forma eficiente.
+ * Permite acceder a las solicitudes y al panel de administración mediante la TopAppBar.
  */
 @OptIn(ExperimentalMaterial3Api::class)
+// Soluciona la advertencia de API Experimental en Material3
 @Composable
 fun CatalogoScreen(
-    onEquipoSeleccionado: (Equipo) -> Unit
+    onSolicitarEquipo: (Equipo) -> Unit,
+    onVerMisSolicitudes: () -> Unit,
+    onIrAdmin: () -> Unit
 ) {
-    // Lista de equipos simulados (Mock Data) para probar el flujo de la UI
+    // Lista de equipos simulados (Mock Data) para probar la interfaz
     val listaEquipos = listOf(
         Equipo(
             id = "1",
@@ -60,10 +66,26 @@ fun CatalogoScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Catálogo de Equipos - MPAZ Pañol") },
+                title = { Text("Catálogo MPAZ Pañol") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
+                ),
+                actions = {
+                    // Acceso a Mis Solicitudes
+                    IconButton(onClick = onVerMisSolicitudes) {
+                        Icon(
+                            imageVector = Icons.Default.List,
+                            contentDescription = "Mis Solicitudes"
+                        )
+                    }
+                    // Acceso al Panel de Administración
+                    IconButton(onClick = onIrAdmin) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Panel Administrador"
+                        )
+                    }
+                }
             )
         }
     ) { innerPadding ->
@@ -80,7 +102,7 @@ fun CatalogoScreen(
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            // LazyColumn reemplaza el RecyclerView tradicional de Android para listas de alto rendimiento
+            // Renderizado con LazyColumn para listas extensas
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxSize()
@@ -88,7 +110,7 @@ fun CatalogoScreen(
                 items(listaEquipos) { equipo ->
                     EquipoItemCard(
                         equipo = equipo,
-                        onSolicitarClick = { onEquipoSeleccionado(equipo) }
+                        onSolicitarClick = { onSolicitarEquipo(equipo) }
                     )
                 }
             }
@@ -97,7 +119,7 @@ fun CatalogoScreen(
 }
 
 /**
- * Componente Tarjeta para renderizar cada equipo de forma individual.
+ * Componente auxiliar para dibujar cada tarjeta de equipo dentro de la lista.
  */
 @Composable
 fun EquipoItemCard(

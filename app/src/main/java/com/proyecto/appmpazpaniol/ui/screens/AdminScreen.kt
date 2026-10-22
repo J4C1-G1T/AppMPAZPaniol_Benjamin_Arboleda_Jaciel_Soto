@@ -28,6 +28,7 @@ import com.proyecto.appmpazpaniol.viewmodel.AdminViewModel
 @Composable
 fun AdminScreen(
     onGestionInventario: () -> Unit,
+    onVolver:()-> Unit,
     viewModel: AdminViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -288,6 +289,7 @@ fun EtiquetaEstadoAdmin(estado: String) {
 fun AdminScreenPreview() {
     AdminScreen(
         onGestionInventario = {},
+        onVolver = {},
         viewModel = AdminViewModel()
     )
 }

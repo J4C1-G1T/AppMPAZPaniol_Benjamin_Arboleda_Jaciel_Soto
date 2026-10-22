@@ -8,37 +8,41 @@ import com.proyecto.appmpazpaniol.model.Equipo
 import com.proyecto.appmpazpaniol.ui.screens.AdminScreen
 import com.proyecto.appmpazpaniol.ui.screens.CatalogoScreen
 import com.proyecto.appmpazpaniol.ui.screens.GestionInventarioScreen
-import com.proyecto.appmpazpaniol.ui.screens.SolicitudScreen
 import com.proyecto.appmpazpaniol.ui.screens.MisSolicitudesScreen
 import com.proyecto.appmpazpaniol.ui.screens.SolicitudScreen
 
 /**
- * Contenedor principal de navegacion declarativa para la app MPAZ Pañol.
+ * Contenedor principal de navegación declarativa para la app MPAZ Pañol.
  * Gestiona el intercambio de pantallas mediante el NavController.
  */
 @Composable
 fun AppNavigation() {
-    // NavController rastrea la pila de navegacion (pantallas anteriores y actuales)
+    // NavController rastrea la pila de navegación (BackStack)
     val navController = rememberNavController()
 
-    // NavHost define el grafo de navegacion e inicia en el Catalogo
+    // NavHost define el grafo de navegación e inicia en el Catálogo
     NavHost(
         navController = navController,
         startDestination = Screen.Catalogo.route
     ) {
-        // Ruta 1: Catálogo de Equipos
+        // Ruta 1: Catálogo de Equipos (Inicio)
         composable(route = Screen.Catalogo.route) {
             CatalogoScreen(
-                onEquipoSeleccionado = { equipo ->
-                    // Navega a la pantalla de solicitud llevando el contexto del equipo
+                onSolicitarEquipo = { equipo ->
+                    // Navega a la pantalla de solicitud llevando la ruta configurada
                     navController.navigate(Screen.CrearSolicitud.route)
+                },
+                onVerMisSolicitudes = {
+                    navController.navigate(Screen.MisSolicitudes.route)
+                },
+                onIrAdmin = {
+                    navController.navigate(Screen.PanelAdmin.route)
                 }
             )
         }
 
-        // Ruta 2: Crear Solicitud de Préstamo (Regla de 3 horas)
+        // Ruta 2: Crear Solicitud de Préstamo
         composable(route = Screen.CrearSolicitud.route) {
-            // Equipo simulado para el flujo de prueba
             val equipoSeleccionado = Equipo(
                 id = "1",
                 nombre = "Proyector Epson EB-X06",
@@ -54,7 +58,7 @@ fun AppNavigation() {
             SolicitudScreen(
                 equipo = equipoSeleccionado,
                 onConfirmarSolicitud = { horas ->
-                    // Al confirmar, regresa al catálogo principal
+                    // Al confirmar, regresa al catálogo principal desapilando
                     navController.popBackStack()
                 },
                 onVolver = {
@@ -73,17 +77,18 @@ fun AppNavigation() {
             )
         }
 
-        // Ruta: Panel de Administración
         // Ruta 4: Panel de Administración
         composable(route = Screen.PanelAdmin.route) {
             AdminScreen(
                 onGestionInventario = {
                     navController.navigate(Screen.GestionInventario.route)
+                },
+                onVolver = {
+                    navController.popBackStack()
                 }
             )
         }
 
-        // Ruta: Gestión de Inventario
         // Ruta 5: Gestión de Inventario
         composable(route = Screen.GestionInventario.route) {
             GestionInventarioScreen(

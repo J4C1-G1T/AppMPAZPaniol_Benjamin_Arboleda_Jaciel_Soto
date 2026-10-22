@@ -71,4 +71,4 @@ com.proyecto.appmpazpaniol/
 2. Abrir el proyecto en Android Studio
    Esperar a que Gradle ejecute la sincronización inicial (Sync Now)
 3. Ejecutar la aplicación
-   Seleccionar el emulador en la barra superior y presionar Run 'app' (Shift + F10)
+   Seleccionar git el emulador en la barra superior y presionar Run 'app' (Shift + F10)

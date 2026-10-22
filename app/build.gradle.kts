@@ -55,4 +55,6 @@ dependencies {
     val roomVersion = "2.6.1"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion") // Extensión para Corutinas y Flow
+    // Librería oficial de Iconos Extendidos para Jetpack Compose Material 3
+    implementation("androidx.compose.material:material-icons-extended")
 }
