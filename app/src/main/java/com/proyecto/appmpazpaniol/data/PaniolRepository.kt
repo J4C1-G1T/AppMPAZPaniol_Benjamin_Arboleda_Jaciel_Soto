@@ -54,4 +54,5 @@ class PaniolRepository(
         solicitudDao.actualizarEstadoSolicitud(id, nuevoEstado)
     }
 }
+}
 //Se confirma que los metodos del Solicitante de paniolRepository funcionan
