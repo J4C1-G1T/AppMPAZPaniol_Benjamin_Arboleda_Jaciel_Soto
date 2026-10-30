@@ -27,4 +27,4 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Run unit tests and assemble app
-        run: ./gradlew testDebugUnitTest assembleDebug
+        run: bash ./gradlew testDebugUnitTest assembleDebug
