@@ -57,21 +57,23 @@ com.proyecto.appmpazpaniol/
 
 ---
 
-##  Requisitos para Compilar y Ejecutar
+## Requisitos para compilar y ejecutar
 
-1. **Android Studio:** Koala / Ladybug o superior (JDK 17 o 21 configurado).
-2. **SDK Mínimo:** Android 8.0 (API Level 26) o superior.
-3. **Dispositivo:** Emulador AVD (ej. Pixel 7 Pro en API 34) o dispositivo físico con depuración USB activa.
+1. **Android Studio:** una versión compatible con Android Gradle Plugin 9.4.1.
+2. **JDK:** 17 o superior.
+3. **Android SDK:** API 37 para compilar; Android Studio puede instalarla al sincronizar el proyecto.
+4. **Dispositivo:** Android 13 (API 33) o superior, en emulador o dispositivo físico con depuración USB activa. La aplicación no se ejecuta en Android 8.
 
 ### Pasos de Instalación:
 
 1. Clonar el repositorio
    git clone https://github.com/J4C1-G1T/AppMPAZPaniol_Benjamin_Arboleda_Jaciel_Soto.git
 
-2. Abrir el proyecto en Android Studio
-   Esperar a que Gradle ejecute la sincronización inicial (Sync Now)
-3. Ejecutar la aplicación
-   Seleccionar el emulador en la barra superior y presionar Run 'app' (Shift + F10)
+2. Extraer el ZIP y abrir en Android Studio la carpeta raíz que contiene `settings.gradle.kts`.
+3. Esperar la sincronización de Gradle y aceptar la instalación de los componentes del SDK que solicite.
+4. Seleccionar un emulador con Android 13 (API 33) o superior y ejecutar la configuración `app`.
+
+El ZIP contiene el estado de una sola rama (no el historial ni las demás ramas). Para obtener el código más reciente, descargar el ZIP de la rama `main`; no seleccionar una rama `feature`.
 
 ## Flujo de trabajo de ramas
 
