@@ -72,3 +72,26 @@ com.proyecto.appmpazpaniol/
    Esperar a que Gradle ejecute la sincronización inicial (Sync Now)
 3. Ejecutar la aplicación
    Seleccionar el emulador en la barra superior y presionar Run 'app' (Shift + F10)
+
+## Flujo de trabajo de ramas
+
+`main` es la rama principal y la version que se debe abrir y ejecutar en el emulador. Todas las ramas de trabajo deben partir de `main` y volver a ella mediante un Pull Request.
+
+Para iniciar una rama nueva:
+
+```bash
+git fetch origin
+git switch main
+git pull --ff-only origin main
+git switch -c feature/nombre-del-cambio
+```
+
+Antes de abrir un Pull Request, integra los cambios recientes de `main` y ejecuta las verificaciones:
+
+```bash
+git fetch origin
+git merge origin/main
+.\gradlew.bat testDebugUnitTest assembleDebug
+```
+
+Los Pull Requests hacia `main` ejecutan estas mismas verificaciones automaticamente en GitHub Actions.
