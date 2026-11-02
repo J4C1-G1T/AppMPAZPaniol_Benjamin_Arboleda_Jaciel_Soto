@@ -179,10 +179,15 @@ fun AppNavigation(
                 )
             }
 
+
             composable(route = Screen.PanelAdmin.route) {
                 AdminScreen(
                     onGestionInventario = {
+
                         navController.navigate(Screen.GestionInventario.route)
+                    },
+                    onVolver = {
+                        navController.popBackStack()
                     }
                 )
             }

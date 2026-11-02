@@ -5,6 +5,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,20 +17,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person // <--- ✅ Icono estándar garantizado por Compose
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -37,6 +38,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.proyecto.appmpazpaniol.viewmodel.LoginViewModel
 
+/**
+ * Pantalla de inicio de sesión con soporte multirrol (Usuario / Administrador).
+ * Corregida sin dependencias de iconos extendidos.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
@@ -51,7 +56,7 @@ fun LoginScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Iniciar Sesión") },
+                title = { Text("Iniciar Sesión - MPAZ Pañol") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -153,6 +158,9 @@ fun LoginScreen(
                 )
             }
 
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // BOTÓN 1: Ingreso estándar procesado por el ViewModel
             Button(
                 onClick = {
                     viewModel.onLoginClick(context, onLoginAdmin, onLoginUsuario)
@@ -160,6 +168,24 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Ingresar")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // BOTÓN 2: Acceso directo de demostración para el perfil Administrador
+            // Usamos Icons.Default.Person para evitar el Unresolved Reference
+            FilledTonalButton(
+                onClick = {
+                    onLoginAdmin("Administrador Pañol", "admin@mpaz.cl")
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+                Text("Ingresar como Administrador (Demo)")
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -174,6 +200,9 @@ fun LoginScreen(
     }
 }
 
+/**
+ * Componente gráfico estático dibuja con Canvas la ilustración del pañol.
+ */
 @Composable
 private fun IlustracionPanol(modifier: Modifier = Modifier) {
     val fondo = MaterialTheme.colorScheme.primaryContainer
@@ -205,7 +234,7 @@ private fun IlustracionPanol(modifier: Modifier = Modifier) {
                     drawRoundRect(
                         color = fondo,
                         topLeft = Offset(ancho * 0.18f + margen, y),
-                        size = Size(ancho * 0.64f - margen * 2, alto * 0.035f),
+                        size = Size((ancho * 0.64f) - (margen * 2), alto * 0.035f),
                         cornerRadius = radio
                     )
                 }

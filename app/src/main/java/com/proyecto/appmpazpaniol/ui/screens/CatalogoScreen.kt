@@ -11,6 +11,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.proyecto.appmpazpaniol.model.Equipo
 
+/**
+ * Pantalla principal de exploración de catálogo de equipos para solicitantes.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogoScreen(
