@@ -1,0 +1,7 @@
+package com.proyecto.appmpazpaniol.model
+
+object AdminCuenta {
+    const val NOMBRE = "Administrador MPAZ"
+    const val CORREO = "admin@mpaz.cl"
+    const val CLAVE = "admin1234"
+}
