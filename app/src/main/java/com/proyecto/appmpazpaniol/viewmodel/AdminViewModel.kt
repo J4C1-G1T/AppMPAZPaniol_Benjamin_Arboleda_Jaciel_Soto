@@ -1,78 +1,57 @@
 package com.proyecto.appmpazpaniol.viewmodel
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.proyecto.appmpazpaniol.data.PaniolRepository
 import com.proyecto.appmpazpaniol.model.AdminModel
 import com.proyecto.appmpazpaniol.model.EstadoSolicitud
 import com.proyecto.appmpazpaniol.model.SolicitudAdmin
+import kotlinx.coroutines.launch
 
-class AdminViewModel : ViewModel() {
-    // pendiente: reemplazar por datos reales de Room
-    var uiState by mutableStateOf(
-        AdminModel(
-            solicitudes = listOf(
-                SolicitudAdmin(
-                    "1",
-                    "Profesor Prueba 1",
-                    "Docente",
-                    "Proyector Epson",
-                    "Sala 101",
-                    "20/10/2026",
-                    "09:00",
-                    "12:00",
-                    EstadoSolicitud.PENDIENTE
-                ),
-                SolicitudAdmin(
-                    "2",
-                    "Profesor Prueba 2",
-                    "Docente",
-                    "Notebook Lenovo",
-                    "Sala 204",
-                    "20/10/2026",
-                    "10:00",
-                    "13:00",
-                    EstadoSolicitud.ACEPTADA
-                ),
-                SolicitudAdmin(
-                    "3",
-                    "Profesor Prueba 3",
-                    "Docente",
-                    "Cámara Canon",
-                    "Sala 305",
-                    "21/10/2026",
-                    "08:30",
-                    "11:30",
-                    EstadoSolicitud.RECHAZADA,
-                    motivoRechazo = "Equipo no disponible en ese horario."
-                ),
-                SolicitudAdmin(
-                    "4",
-                    "Profesor Prueba 4",
-                    "Docente",
-                    "Micrófono inalámbrico",
-                    "Sala 112",
-                    "21/10/2026",
-                    "14:00",
-                    "16:00",
-                    EstadoSolicitud.ENTREGADA
-                ),
-                SolicitudAdmin(
-                    "5",
-                    "Profesor Prueba 5",
-                    "Docente",
-                    "Parlante portátil",
-                    "Sala 208",
-                    "22/10/2026",
-                    "09:30",
-                    "12:30",
-                    EstadoSolicitud.DEVUELTA
-                )
-            )
-        )
-    )
+class AdminViewModel(
+    private val repository: PaniolRepository? = null
+) : ViewModel() {
+
+    var uiState by mutableStateOf(AdminModel())
         private set
+
+    init {
+        cargarSolicitudes()
+    }
+
+    fun cargarSolicitudes() {
+        val repo = repository ?: return
+        viewModelScope.launch {
+            try {
+                // Obtenemos equipos para traducir equipoId -> nombre real del equipo
+                val mapaEquipos = repo.obtenerEquipos().associateBy { it.id }
+                val remotas = repo.obtenerSolicitudesRemotas()
+
+                val listaMapeada = remotas.map { dto ->
+                    val nombreEquipo = mapaEquipos[dto.equipoId]?.nombre ?: "Equipo ID: ${dto.equipoId}"
+                    SolicitudAdmin(
+                        id = dto.id?.toString() ?: "",
+                        solicitante = dto.solicitanteEmail,
+                        cargo = dto.cargo,
+                        equipo = nombreEquipo,
+                        sala = dto.sala,
+                        fecha = dto.fechaReserva,
+                        horaInicio = "Reserva",
+                        horaDevolucion = "Según horario",
+                        estado = dto.estado,
+                        motivoRechazo = dto.motivoRechazo ?: ""
+                    )
+                }
+                uiState = uiState.copy(solicitudes = listaMapeada)
+            } catch (e: Exception) {
+                Log.e("AdminViewModel", "Error al cargar solicitudes desde AWS: ${e.message}")
+            }
+        }
+    }
 
     fun onMotivoRechazoChanged(motivo: String) {
         uiState = uiState.copy(
@@ -89,15 +68,14 @@ class AdminViewModel : ViewModel() {
     }
 
     private fun validateMotivoRechazo(motivo: String): String? {
-        if (motivo.isBlank()) {
-            return "La justificación del rechazo es obligatoria."
+        return if (motivo.isBlank()) {
+            "La justificación del rechazo es obligatoria."
         } else {
-            return null
+            null
         }
     }
 
-    // Solo aplica una transición cuando coincide el estado actual esperado.
-    private fun cambiarEstado(
+    private fun aplicarCambioLocal(
         id: String,
         estadoActual: String,
         estadoNuevo: String,
@@ -115,8 +93,15 @@ class AdminViewModel : ViewModel() {
     }
 
     fun onAceptarClick(id: String) {
-        // pendiente: descontar stock al aceptar y recuperarlo al devolver (requiere Room/PaniolRepository)
-        cambiarEstado(id, EstadoSolicitud.PENDIENTE, EstadoSolicitud.ACEPTADA)
+        val idLong = id.toLongOrNull() ?: return
+        viewModelScope.launch {
+            try {
+                repository?.cambiarEstadoSolicitudRemota(idLong, EstadoSolicitud.ACEPTADA)
+                aplicarCambioLocal(id, EstadoSolicitud.PENDIENTE, EstadoSolicitud.ACEPTADA)
+            } catch (e: Exception) {
+                Log.e("AdminViewModel", "Error al aceptar solicitud $id: ${e.message}")
+            }
+        }
     }
 
     fun onRechazarClick(id: String, onSuccess: () -> Unit) {
@@ -126,26 +111,52 @@ class AdminViewModel : ViewModel() {
             return
         }
 
-        cambiarEstado(
-            id,
-            EstadoSolicitud.PENDIENTE,
-            EstadoSolicitud.RECHAZADA,
-            uiState.motivoRechazo
-        )
-        uiState = uiState.copy(
-            motivoRechazo = "",
-            motivoRechazoError = null
-        )
-        onSuccess()
+        val idLong = id.toLongOrNull() ?: return
+        val motivoConfirmado = uiState.motivoRechazo
+
+        viewModelScope.launch {
+            try {
+                repository?.rechazarSolicitudRemota(idLong, motivoConfirmado)
+                aplicarCambioLocal(
+                    id,
+                    EstadoSolicitud.PENDIENTE,
+                    EstadoSolicitud.RECHAZADA,
+                    motivoConfirmado
+                )
+                uiState = uiState.copy(
+                    motivoRechazo = "",
+                    motivoRechazoError = null
+                )
+                onSuccess()
+            } catch (e: Exception) {
+                uiState = uiState.copy(
+                    motivoRechazoError = "Error de red al rechazar: ${e.message}"
+                )
+            }
+        }
     }
 
     fun onEntregarClick(id: String) {
-        // pendiente: guardar fecha y hora de entrega y devolución.
-        cambiarEstado(id, EstadoSolicitud.ACEPTADA, EstadoSolicitud.ENTREGADA)
+        val idLong = id.toLongOrNull() ?: return
+        viewModelScope.launch {
+            try {
+                repository?.cambiarEstadoSolicitudRemota(idLong, EstadoSolicitud.ENTREGADA)
+                aplicarCambioLocal(id, EstadoSolicitud.ACEPTADA, EstadoSolicitud.ENTREGADA)
+            } catch (e: Exception) {
+                Log.e("AdminViewModel", "Error al marcar entregada $id: ${e.message}")
+            }
+        }
     }
 
     fun onDevolverClick(id: String) {
-        // pendiente: descontar stock al aceptar y recuperarlo al devolver (requiere Room/PaniolRepository)
-        cambiarEstado(id, EstadoSolicitud.ENTREGADA, EstadoSolicitud.DEVUELTA)
+        val idLong = id.toLongOrNull() ?: return
+        viewModelScope.launch {
+            try {
+                repository?.cambiarEstadoSolicitudRemota(idLong, EstadoSolicitud.DEVUELTA)
+                aplicarCambioLocal(id, EstadoSolicitud.ENTREGADA, EstadoSolicitud.DEVUELTA)
+            } catch (e: Exception) {
+                Log.e("AdminViewModel", "Error al marcar devuelta $id: ${e.message}")
+            }
+        }
     }
 }

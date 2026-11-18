@@ -7,10 +7,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.proyecto.appmpazpaniol.data.PaniolRepository
+import com.proyecto.appmpazpaniol.viewmodel.SolicitanteViewModel
 
 data class SolicitudHistorialMock(
     val id: String,
@@ -23,13 +29,22 @@ data class SolicitudHistorialMock(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MisSolicitudesScreen(
-    onVolver: () -> Unit
+    onVolver: () -> Unit,
+    correoUsuario: String = "",
+    repository: PaniolRepository? = null
 ) {
-    val listaHistorial = listOf(
-        SolicitudHistorialMock("1", "Proyector Epson EB-X06", "13/10/2026", 3, "Pendiente"),
-        SolicitudHistorialMock("2", "Cámara Canon EOS Rebel T7", "10/10/2026", 4, "Aprobado"),
-        SolicitudHistorialMock("3", "Notebook Lenovo ThinkPad", "05/10/2026", 2, "Rechazado")
+    val viewModel: SolicitanteViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return SolicitanteViewModel(repository) as T
+            }
+        }
     )
+
+    LaunchedEffect(correoUsuario) {
+        viewModel.cargarHistorialSolicitudes(correoUsuario)
+    }
 
     Scaffold(
         topBar = {
@@ -52,12 +67,18 @@ fun MisSolicitudesScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(listaHistorial) { solicitud ->
-                    ItemSolicitudCard(solicitud = solicitud)
+            if (viewModel.historialSolicitudes.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Aún no tienes solicitudes registradas.")
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(viewModel.historialSolicitudes) { solicitud ->
+                        ItemSolicitudCard(solicitud = solicitud)
+                    }
                 }
             }
         }
@@ -84,18 +105,15 @@ fun ItemSolicitudCard(solicitud: SolicitudHistorialMock) {
                 Text(
                     text = solicitud.nombreEquipo,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
                 )
                 EtiquetaEstado(estado = solicitud.estado)
             }
 
             Text(
-                text = "Fecha de reserva: ${solicitud.fechaReserva}",
+                text = "Detalle: ${solicitud.fechaReserva}",
                 style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = "Duración: ${solicitud.horasSolicitadas} horas",
-                style = MaterialTheme.typography.bodySmall
             )
         }
     }
@@ -104,8 +122,9 @@ fun ItemSolicitudCard(solicitud: SolicitudHistorialMock) {
 @Composable
 fun EtiquetaEstado(estado: String) {
     val (colorFondo, colorTexto) = when (estado) {
-        "Aprobado" -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+        "Aceptada", "Entregada" -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
         "Pendiente" -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+        "Devuelta" -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
         else -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
     }
 

@@ -1,37 +1,23 @@
 package com.proyecto.appmpazpaniol.ui.navigation
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.proyecto.appmpazpaniol.data.AppDatabase
+import com.proyecto.appmpazpaniol.data.PaniolRepository
 import com.proyecto.appmpazpaniol.model.Equipo
-import com.proyecto.appmpazpaniol.ui.screens.AdminScreen
-import com.proyecto.appmpazpaniol.ui.screens.AjustesScreen
-import com.proyecto.appmpazpaniol.ui.screens.CatalogoScreen
-import com.proyecto.appmpazpaniol.ui.screens.GestionInventarioScreen
-import com.proyecto.appmpazpaniol.ui.screens.LoginScreen
-import com.proyecto.appmpazpaniol.ui.screens.MisSolicitudesScreen
-import com.proyecto.appmpazpaniol.ui.screens.PerfilScreen
-import com.proyecto.appmpazpaniol.ui.screens.RegisterScreen
-import com.proyecto.appmpazpaniol.ui.screens.SolicitudScreen
+import com.proyecto.appmpazpaniol.ui.screens.*
 
 private data class NavigationItem(
     val route: String,
@@ -44,12 +30,19 @@ fun AppNavigation(
     darkTheme: Boolean,
     onDarkThemeChange: (Boolean) -> Unit
 ) {
+    val context = LocalContext.current
+    val repository = remember {
+        val db = AppDatabase.obtenerBaseDatos(context)
+        PaniolRepository(db.solicitudDao(), db.equipoDao())
+    }
+
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     var nombreUsuario by remember { mutableStateOf("") }
     var correoUsuario by remember { mutableStateOf("") }
     var esAdministrador by remember { mutableStateOf(false) }
+    var equipoSeleccionado by remember { mutableStateOf<Equipo?>(null) }
 
     val homeRoute = if (esAdministrador) Screen.PanelAdmin.route else Screen.Catalogo.route
     val navigationItems = if (esAdministrador) {
@@ -141,33 +134,37 @@ fun AppNavigation(
 
             composable(route = Screen.Catalogo.route) {
                 CatalogoScreen(
-                    onEquipoSeleccionado = {
+                    onEquipoSeleccionado = { equipo ->
+                        equipoSeleccionado = equipo
                         navController.navigate(Screen.CrearSolicitud.route)
-                    }
+                    },
+                    repository = repository
                 )
             }
 
             composable(route = Screen.CrearSolicitud.route) {
-                val equipoSeleccionado = Equipo(
+                val equipoActual = equipoSeleccionado ?: Equipo(
                     id = "1",
-                    nombre = "Proyector Epson EB-X06",
-                    marca = "Epson",
-                    modelo = "EB-X06",
-                    categoria = "Proyector",
-                    stockTotal = 5,
-                    stockDisponible = 3,
+                    nombre = "Computador HP ProDesk",
+                    marca = "HP",
+                    modelo = "ProDesk 400",
+                    categoria = "Computador",
+                    stockTotal = 8,
+                    stockDisponible = 5,
                     estado = "Disponible",
                     ubicacionFisica = "Estante A1"
                 )
 
                 SolicitudScreen(
-                    equipo = equipoSeleccionado,
+                    equipo = equipoActual,
                     onConfirmarSolicitud = {
                         navController.popBackStack()
                     },
                     onVolver = {
                         navController.popBackStack()
-                    }
+                    },
+                    correoUsuario = correoUsuario,
+                    repository = repository
                 )
             }
 
@@ -175,20 +172,21 @@ fun AppNavigation(
                 MisSolicitudesScreen(
                     onVolver = {
                         navController.popBackStack()
-                    }
+                    },
+                    correoUsuario = correoUsuario,
+                    repository = repository
                 )
             }
-
 
             composable(route = Screen.PanelAdmin.route) {
                 AdminScreen(
                     onGestionInventario = {
-
                         navController.navigate(Screen.GestionInventario.route)
                     },
                     onVolver = {
                         navController.popBackStack()
-                    }
+                    },
+                    repository = repository
                 )
             }
 
@@ -196,7 +194,8 @@ fun AppNavigation(
                 GestionInventarioScreen(
                     onVolver = {
                         navController.popBackStack()
-                    }
+                    },
+                    repository = repository
                 )
             }
 

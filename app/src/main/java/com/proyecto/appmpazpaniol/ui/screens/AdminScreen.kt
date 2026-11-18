@@ -5,11 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
@@ -17,7 +13,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.proyecto.appmpazpaniol.data.PaniolRepository
 import com.proyecto.appmpazpaniol.model.SolicitudAdmin
 import com.proyecto.appmpazpaniol.viewmodel.AdminViewModel
 
@@ -26,8 +25,21 @@ import com.proyecto.appmpazpaniol.viewmodel.AdminViewModel
 fun AdminScreen(
     onGestionInventario: () -> Unit,
     onVolver: () -> Unit,
-    viewModel: AdminViewModel = viewModel()
+    repository: PaniolRepository? = null
 ) {
+    val viewModel: AdminViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return AdminViewModel(repository) as T
+            }
+        }
+    )
+
+    LaunchedEffect(Unit) {
+        viewModel.cargarSolicitudes()
+    }
+
     val context = LocalContext.current
     val state = viewModel.uiState
     var idAceptar by remember { mutableStateOf("") }
@@ -75,9 +87,11 @@ fun AdminScreen(
                         onAceptar = { idAceptar = solicitud.id },
                         onRechazar = { idRechazar = solicitud.id },
                         onEntregar = {
+                            viewModel.onEntregarClick(solicitud.id)
                             Toast.makeText(context, "Equipo entregado", Toast.LENGTH_SHORT).show()
                         },
                         onDevolver = {
+                            viewModel.onDevolverClick(solicitud.id)
                             Toast.makeText(context, "Equipo devuelto", Toast.LENGTH_SHORT).show()
                         }
                     )
@@ -203,7 +217,7 @@ fun SolicitudAdminCard(
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
-                text = "Fecha: ${solicitud.fecha} | ${solicitud.horaInicio} a ${solicitud.horaDevolucion}",
+                text = "Detalle: ${solicitud.fecha}",
                 style = MaterialTheme.typography.bodySmall
             )
             if (solicitud.estado == "Rechazada") {
@@ -277,7 +291,6 @@ fun EtiquetaEstadoAdmin(estado: String) {
 fun AdminScreenPreview() {
     AdminScreen(
         onGestionInventario = {},
-        onVolver = {},
-        viewModel = AdminViewModel()
+        onVolver = {}
     )
 }

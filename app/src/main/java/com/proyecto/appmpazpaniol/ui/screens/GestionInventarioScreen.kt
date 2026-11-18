@@ -8,32 +8,41 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.proyecto.appmpazpaniol.data.PaniolRepository
 import com.proyecto.appmpazpaniol.model.Equipo
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GestionInventarioScreen(onVolver: () -> Unit) {
+fun GestionInventarioScreen(
+    onVolver: () -> Unit,
+    repository: PaniolRepository? = null
+) {
     val context = LocalContext.current
-    // pendiente: reemplazar por datos reales de Room
-    val listaEquipos = listOf(
-        Equipo("1", "Computador HP ProDesk", "HP", "ProDesk 400", "Computador", 8, 5, "Disponible", "Estante A1"),
-        Equipo("2", "Notebook Lenovo ThinkPad", "Lenovo", "ThinkPad E14", "Notebook", 10, 4, "Reservado", "Estante A2"),
-        Equipo("3", "Proyector Epson EB-X06", "Epson", "EB-X06", "Proyector", 5, 3, "Prestado", "Estante B1"),
-        Equipo("4", "Kit Arduino UNO", "Arduino", "UNO R3", "Robótica", 6, 6, "En Mantenimiento", "Estante C1"),
-        Equipo("5", "Switch TP-Link", "TP-Link", "TL-SG1024", "Equipamiento de red", 4, 0, "Fuera de Servicio", "Estante D1")
-    )
+    val scope = rememberCoroutineScope()
 
+    var listaEquipos by remember { mutableStateOf<List<Equipo>>(emptyList()) }
+
+    fun recargarEquipos() {
+        val repo = repository ?: return
+        scope.launch {
+            listaEquipos = repo.obtenerEquipos().map { it.toEquipo() }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        recargarEquipos()
+    }
+
+    var equipoEditandoId by remember { mutableStateOf("") }
+    var stockDisponibleEditando by remember { mutableIntStateOf(0) }
     var nombre by remember { mutableStateOf("") }
     var marca by remember { mutableStateOf("") }
     var modelo by remember { mutableStateOf("") }
@@ -42,6 +51,19 @@ fun GestionInventarioScreen(onVolver: () -> Unit) {
     var stockTotal by remember { mutableStateOf("") }
     var ubicacion by remember { mutableStateOf("") }
     var editando by remember { mutableStateOf(false) }
+
+    fun limpiarFormulario() {
+        equipoEditandoId = ""
+        stockDisponibleEditando = 0
+        nombre = ""
+        marca = ""
+        modelo = ""
+        categoria = ""
+        estado = ""
+        stockTotal = ""
+        ubicacion = ""
+        editando = false
+    }
 
     Scaffold(
         topBar = {
@@ -80,7 +102,7 @@ fun GestionInventarioScreen(onVolver: () -> Unit) {
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = if (editando) "Editar equipo" else "Nuevo equipo",
+                                text = if (editando) "Editar equipo (ID: $equipoEditandoId)" else "Nuevo equipo",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -92,7 +114,6 @@ fun GestionInventarioScreen(onVolver: () -> Unit) {
                                 singleLine = true,
                                 modifier = Modifier.fillMaxWidth()
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
                             OutlinedTextField(
                                 value = marca,
                                 onValueChange = { marca = it },
@@ -100,7 +121,6 @@ fun GestionInventarioScreen(onVolver: () -> Unit) {
                                 singleLine = true,
                                 modifier = Modifier.fillMaxWidth()
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
                             OutlinedTextField(
                                 value = modelo,
                                 onValueChange = { modelo = it },
@@ -108,7 +128,6 @@ fun GestionInventarioScreen(onVolver: () -> Unit) {
                                 singleLine = true,
                                 modifier = Modifier.fillMaxWidth()
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
                             OutlinedTextField(
                                 value = categoria,
                                 onValueChange = { categoria = it },
@@ -116,15 +135,13 @@ fun GestionInventarioScreen(onVolver: () -> Unit) {
                                 singleLine = true,
                                 modifier = Modifier.fillMaxWidth()
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
                             OutlinedTextField(
                                 value = estado,
                                 onValueChange = { estado = it },
-                                label = { Text("Estado") },
+                                label = { Text("Estado (ej. Disponible)") },
                                 singleLine = true,
                                 modifier = Modifier.fillMaxWidth()
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
                             OutlinedTextField(
                                 value = stockTotal,
                                 onValueChange = { stockTotal = it },
@@ -133,7 +150,6 @@ fun GestionInventarioScreen(onVolver: () -> Unit) {
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.fillMaxWidth()
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
                             OutlinedTextField(
                                 value = ubicacion,
                                 onValueChange = { ubicacion = it },
@@ -145,31 +161,47 @@ fun GestionInventarioScreen(onVolver: () -> Unit) {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Button(
                                     onClick = {
-                                        Toast.makeText(context, "Equipo guardado", Toast.LENGTH_SHORT).show()
-                                        nombre = ""
-                                        marca = ""
-                                        modelo = ""
-                                        categoria = ""
-                                        estado = ""
-                                        stockTotal = ""
-                                        ubicacion = ""
-                                        editando = false
+                                        val totalInt = stockTotal.toIntOrNull() ?: 1
+                                        val idFinal = if (editando) {
+                                            equipoEditandoId
+                                        } else {
+                                            ((listaEquipos.mapNotNull { it.id.toIntOrNull() }.maxOrNull() ?: 5) + 1).toString()
+                                        }
+                                        val disponibleFinal = if (editando) {
+                                            stockDisponibleEditando.coerceAtMost(totalInt)
+                                        } else {
+                                            totalInt
+                                        }
+
+                                        val equipoGuardar = Equipo(
+                                            id = idFinal,
+                                            nombre = nombre.ifBlank { "Equipo sin nombre" },
+                                            marca = marca.ifBlank { "Genérica" },
+                                            modelo = modelo.ifBlank { "Estándar" },
+                                            categoria = categoria.ifBlank { "General" },
+                                            stockTotal = totalInt,
+                                            stockDisponible = disponibleFinal,
+                                            estado = estado.ifBlank { "Disponible" },
+                                            ubicacionFisica = ubicacion.ifBlank { "Bodega Pañol" }
+                                        )
+
+                                        scope.launch {
+                                            try {
+                                                repository?.guardarEquipoRemoto(equipoGuardar, esEdicion = editando)
+                                                Toast.makeText(context, "Equipo guardado en AWS", Toast.LENGTH_SHORT).show()
+                                                limpiarFormulario()
+                                                recargarEquipos()
+                                            } catch (e: Exception) {
+                                                Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
+                                            }
+                                        }
                                     },
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Text("Guardar equipo")
                                 }
                                 OutlinedButton(
-                                    onClick = {
-                                        nombre = ""
-                                        marca = ""
-                                        modelo = ""
-                                        categoria = ""
-                                        estado = ""
-                                        stockTotal = ""
-                                        ubicacion = ""
-                                        editando = false
-                                    },
+                                    onClick = { limpiarFormulario() },
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Text("Limpiar")
@@ -183,6 +215,8 @@ fun GestionInventarioScreen(onVolver: () -> Unit) {
                     EquipoInventarioCard(
                         equipo = equipo,
                         onEditar = {
+                            equipoEditandoId = equipo.id
+                            stockDisponibleEditando = equipo.stockDisponible
                             nombre = equipo.nombre
                             marca = equipo.marca
                             modelo = equipo.modelo
@@ -193,7 +227,11 @@ fun GestionInventarioScreen(onVolver: () -> Unit) {
                             editando = true
                         },
                         onDarDeBaja = {
-                            Toast.makeText(context, "Equipo dado de baja", Toast.LENGTH_SHORT).show()
+                            scope.launch {
+                                repository?.darDeBajaEquipo(equipo.id)
+                                Toast.makeText(context, "Equipo dado de baja", Toast.LENGTH_SHORT).show()
+                                recargarEquipos()
+                            }
                         }
                     )
                 }
