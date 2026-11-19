@@ -1,5 +1,12 @@
 package com.proyecto.appmpazpaniol.ui.screens
 
+import android.content.Context
+import android.hardware.camera2.CameraAccessException
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -90,6 +97,10 @@ fun GestionInventarioScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.weight(1f)
             ) {
+                item {
+                    LinternaControl()
+                }
+
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -236,6 +247,112 @@ fun GestionInventarioScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+private data class FlashCameraSelection(
+    val cameraId: String?,
+    val message: String?
+)
+
+private fun findFlashCamera(cameraManager: CameraManager): FlashCameraSelection {
+    return try {
+        val selected = cameraManager.cameraIdList
+            .mapNotNull { cameraId ->
+                val characteristics = cameraManager.getCameraCharacteristics(cameraId)
+                if (characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true) {
+                    cameraId to (characteristics.get(CameraCharacteristics.LENS_FACING) ==
+                        CameraCharacteristics.LENS_FACING_BACK)
+                } else {
+                    null
+                }
+            }
+            .maxByOrNull { it.second }
+        FlashCameraSelection(
+            cameraId = selected?.first,
+            message = if (selected == null) "Este dispositivo no tiene cámara con flash." else null
+        )
+    } catch (e: CameraAccessException) {
+        Log.e("GestionInventario", "No se pudo consultar la cámara con flash", e)
+        FlashCameraSelection(null, "No se pudo acceder a la cámara.")
+    } catch (e: IllegalArgumentException) {
+        Log.e("GestionInventario", "No se pudo consultar la cámara con flash", e)
+        FlashCameraSelection(null, "No se pudo acceder a la cámara.")
+    }
+}
+
+@Composable
+private fun LinternaControl() {
+    val context = LocalContext.current
+    val cameraManager = remember(context) {
+        context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+    }
+    val selection = remember(cameraManager) { findFlashCamera(cameraManager) }
+    val cameraId = selection.cameraId
+    var torchEnabled by remember(cameraId) { mutableStateOf(false) }
+    var message by remember(selection) { mutableStateOf(selection.message) }
+
+    DisposableEffect(cameraManager, cameraId) {
+        if (cameraId == null) {
+            onDispose {}
+        } else {
+            val callback = object : CameraManager.TorchCallback() {
+                override fun onTorchModeChanged(changedCameraId: String, enabled: Boolean) {
+                    if (changedCameraId == cameraId) {
+                        torchEnabled = enabled
+                        message = if (enabled) "Linterna encendida." else "Linterna apagada."
+                    }
+                }
+
+                override fun onTorchModeUnavailable(unavailableCameraId: String) {
+                    if (unavailableCameraId == cameraId) {
+                        torchEnabled = false
+                        message = "La linterna no está disponible en este momento."
+                    }
+                }
+            }
+            cameraManager.registerTorchCallback(callback, Handler(Looper.getMainLooper()))
+
+            onDispose {
+                cameraManager.unregisterTorchCallback(callback)
+                if (torchEnabled) {
+                    try {
+                        cameraManager.setTorchMode(cameraId, false)
+                    } catch (e: CameraAccessException) {
+                        Log.e("GestionInventario", "No se pudo apagar la linterna al salir", e)
+                    } catch (e: IllegalArgumentException) {
+                        Log.e("GestionInventario", "No se pudo apagar la linterna al salir", e)
+                    }
+                }
+            }
+        }
+    }
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = {
+                    if (cameraId != null) {
+                        try {
+                            cameraManager.setTorchMode(cameraId, !torchEnabled)
+                        } catch (e: CameraAccessException) {
+                            message = "No se pudo cambiar el estado de la linterna."
+                            Log.e("GestionInventario", "No se pudo cambiar la linterna", e)
+                        } catch (e: IllegalArgumentException) {
+                            message = "No se pudo cambiar el estado de la linterna."
+                            Log.e("GestionInventario", "No se pudo cambiar la linterna", e)
+                        }
+                    }
+                },
+                enabled = cameraId != null
+            ) {
+                Text(if (torchEnabled) "Linterna: encendida" else "Linterna: apagada")
+            }
+            message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
     }
 }
