@@ -8,9 +8,11 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -36,11 +38,14 @@ fun GestionInventarioScreen(
     val scope = rememberCoroutineScope()
 
     var listaEquipos by remember { mutableStateOf<List<Equipo>>(emptyList()) }
+    var guardando by remember { mutableStateOf(false) }
 
     fun recargarEquipos() {
         val repo = repository ?: return
         scope.launch {
-            listaEquipos = repo.obtenerEquipos().map { it.toEquipo() }
+            listaEquipos = repo.obtenerEquipos()
+                .map { it.toEquipo() }
+                .filter { !it.estado.equals("Fuera de Servicio", ignoreCase = true) }
         }
     }
 
@@ -48,13 +53,15 @@ fun GestionInventarioScreen(
         recargarEquipos()
     }
 
+    val estadosDisponibles = listOf("Disponible", "En Mantenimiento", "Reservado")
+
     var equipoEditandoId by remember { mutableStateOf("") }
     var stockDisponibleEditando by remember { mutableIntStateOf(0) }
     var nombre by remember { mutableStateOf("") }
     var marca by remember { mutableStateOf("") }
     var modelo by remember { mutableStateOf("") }
     var categoria by remember { mutableStateOf("") }
-    var estado by remember { mutableStateOf("") }
+    var estado by remember { mutableStateOf("Disponible") }
     var stockTotal by remember { mutableStateOf("") }
     var ubicacion by remember { mutableStateOf("") }
     var editando by remember { mutableStateOf(false) }
@@ -66,7 +73,7 @@ fun GestionInventarioScreen(
         marca = ""
         modelo = ""
         categoria = ""
-        estado = ""
+        estado = "Disponible"
         stockTotal = ""
         ubicacion = ""
         editando = false
@@ -146,13 +153,27 @@ fun GestionInventarioScreen(
                                 singleLine = true,
                                 modifier = Modifier.fillMaxWidth()
                             )
-                            OutlinedTextField(
-                                value = estado,
-                                onValueChange = { estado = it },
-                                label = { Text("Estado (ej. Disponible)") },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
+
+                            Text(
+                                text = "Estado",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                estadosDisponibles.forEach { opcion ->
+                                    FilterChip(
+                                        selected = estado.equals(opcion, ignoreCase = true),
+                                        onClick = { estado = opcion },
+                                        label = { Text(opcion) }
+                                    )
+                                }
+                            }
+
                             OutlinedTextField(
                                 value = stockTotal,
                                 onValueChange = { stockTotal = it },
@@ -171,47 +192,64 @@ fun GestionInventarioScreen(
 
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Button(
+                                    enabled = !guardando,
                                     onClick = {
-                                        val totalInt = stockTotal.toIntOrNull() ?: 1
-                                        val idFinal = if (editando) {
-                                            equipoEditandoId
-                                        } else {
-                                            ((listaEquipos.mapNotNull { it.id.toIntOrNull() }.maxOrNull() ?: 5) + 1).toString()
-                                        }
-                                        val disponibleFinal = if (editando) {
-                                            stockDisponibleEditando.coerceAtMost(totalInt)
-                                        } else {
-                                            totalInt
-                                        }
-
-                                        val equipoGuardar = Equipo(
-                                            id = idFinal,
-                                            nombre = nombre.ifBlank { "Equipo sin nombre" },
-                                            marca = marca.ifBlank { "Genérica" },
-                                            modelo = modelo.ifBlank { "Estándar" },
-                                            categoria = categoria.ifBlank { "General" },
-                                            stockTotal = totalInt,
-                                            stockDisponible = disponibleFinal,
-                                            estado = estado.ifBlank { "Disponible" },
-                                            ubicacionFisica = ubicacion.ifBlank { "Bodega Pañol" }
-                                        )
+                                        val repo = repository ?: return@Button
+                                        val totalInt = (stockTotal.toIntOrNull() ?: 1).coerceAtLeast(1)
 
                                         scope.launch {
+                                            guardando = true
                                             try {
-                                                repository?.guardarEquipoRemoto(equipoGuardar, esEdicion = editando)
+                                                val idFinal = if (editando) {
+                                                    equipoEditandoId
+                                                } else {
+                                                    val todosEnAws = repo.obtenerEquipos()
+                                                    val idsExistentes = todosEnAws.map { it.id.trim() }.toSet()
+                                                    var siguienteNum = (todosEnAws
+                                                        .mapNotNull { it.id.filter(Char::isDigit).toIntOrNull() }
+                                                        .maxOrNull() ?: 5) + 1
+                                                    while (idsExistentes.contains(siguienteNum.toString())) {
+                                                        siguienteNum++
+                                                    }
+                                                    siguienteNum.toString()
+                                                }
+
+                                                val disponibleFinal = if (editando) {
+                                                    stockDisponibleEditando.coerceAtMost(totalInt)
+                                                } else {
+                                                    totalInt
+                                                }
+
+                                                val equipoGuardar = Equipo(
+                                                    id = idFinal,
+                                                    nombre = nombre.trim().ifBlank { "Equipo sin nombre" },
+                                                    marca = marca.trim().ifBlank { "Genérica" },
+                                                    modelo = modelo.trim().ifBlank { "Estándar" },
+                                                    categoria = categoria.trim().ifBlank { "General" },
+                                                    stockTotal = totalInt,
+                                                    stockDisponible = disponibleFinal,
+                                                    estado = estado,
+                                                    ubicacionFisica = ubicacion.trim().ifBlank { "Bodega Pañol" }
+                                                )
+
+                                                repo.guardarEquipoRemoto(equipoGuardar, esEdicion = editando)
                                                 Toast.makeText(context, "Equipo guardado en AWS", Toast.LENGTH_SHORT).show()
                                                 limpiarFormulario()
-                                                recargarEquipos()
                                             } catch (e: Exception) {
+                                                Log.e("GestionInventario", "Error al guardar equipo", e)
                                                 Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
+                                            } finally {
+                                                recargarEquipos()
+                                                guardando = false
                                             }
                                         }
                                     },
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    Text("Guardar equipo")
+                                    Text(if (guardando) "Guardando..." else "Guardar equipo")
                                 }
                                 OutlinedButton(
+                                    enabled = !guardando,
                                     onClick = { limpiarFormulario() },
                                     modifier = Modifier.weight(1f)
                                 ) {
@@ -222,7 +260,7 @@ fun GestionInventarioScreen(
                     }
                 }
 
-                items(listaEquipos) { equipo ->
+                items(listaEquipos, key = { it.id }) { equipo ->
                     EquipoInventarioCard(
                         equipo = equipo,
                         onEditar = {
@@ -232,7 +270,11 @@ fun GestionInventarioScreen(
                             marca = equipo.marca
                             modelo = equipo.modelo
                             categoria = equipo.categoria
-                            estado = equipo.estado
+                            estado = if (estadosDisponibles.any { it.equals(equipo.estado, ignoreCase = true) }) {
+                                equipo.estado
+                            } else {
+                                "Disponible"
+                            }
                             stockTotal = "${equipo.stockTotal}"
                             ubicacion = equipo.ubicacionFisica
                             editando = true
@@ -263,7 +305,7 @@ private fun findFlashCamera(cameraManager: CameraManager): FlashCameraSelection 
                 val characteristics = cameraManager.getCameraCharacteristics(cameraId)
                 if (characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true) {
                     cameraId to (characteristics.get(CameraCharacteristics.LENS_FACING) ==
-                        CameraCharacteristics.LENS_FACING_BACK)
+                            CameraCharacteristics.LENS_FACING_BACK)
                 } else {
                     null
                 }
