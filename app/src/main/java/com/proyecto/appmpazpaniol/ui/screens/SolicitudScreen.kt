@@ -1,16 +1,33 @@
 package com.proyecto.appmpazpaniol.ui.screens
 
+import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationManager
+import android.net.Uri
+import android.os.CancellationSignal
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -18,6 +35,7 @@ import com.proyecto.appmpazpaniol.data.PaniolRepository
 import com.proyecto.appmpazpaniol.model.Equipo
 import com.proyecto.appmpazpaniol.viewmodel.SolicitanteViewModel
 import com.proyecto.appmpazpaniol.viewmodel.ValidacionState
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +62,124 @@ fun SolicitudScreen(
     var cargo by remember { mutableStateOf("Docente") }
     var sala by remember { mutableStateOf("Sala 402") }
     var motivoUso by remember { mutableStateOf("") }
+    var locationMessage by remember { mutableStateOf<String?>(null) }
+    var coordinates by remember { mutableStateOf<String?>(null) }
+    var locationPermissionRequested by rememberSaveable { mutableStateOf(false) }
+    var openLocationSettings by remember { mutableStateOf(false) }
+    val locationManager = remember(context) {
+        context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    }
+
+    fun obtainCurrentLocation() {
+        val hasFineLocation = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        val hasCoarseLocation = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!hasFineLocation && !hasCoarseLocation) {
+            locationMessage = "Se necesita permiso de ubicación para continuar."
+            return
+        }
+
+        val provider = LocationManager.GPS_PROVIDER
+        try {
+            if (!locationManager.isProviderEnabled(provider)) {
+                locationMessage = "Activa el GPS del dispositivo e inténtalo nuevamente."
+                return
+            }
+        } catch (e: IllegalArgumentException) {
+            locationMessage = "El proveedor GPS no está disponible en este dispositivo."
+            return
+        }
+
+        coordinates = null
+        locationMessage = "Obteniendo ubicación..."
+        val cancellationSignal = CancellationSignal()
+        val handler = Handler(Looper.getMainLooper())
+        var completed = false
+        val timeout = Runnable {
+            if (!completed) {
+                completed = true
+                cancellationSignal.cancel()
+                locationMessage = "No se obtuvo la ubicación en 15 segundos. Inténtalo nuevamente."
+            }
+        }
+        handler.postDelayed(timeout, 15_000L)
+
+        try {
+            locationManager.getCurrentLocation(provider, cancellationSignal, context.mainExecutor) { location: Location? ->
+                if (!completed) {
+                    completed = true
+                    handler.removeCallbacks(timeout)
+                    if (location == null) {
+                        locationMessage = "No se pudo obtener la ubicación. Inténtalo nuevamente."
+                    } else {
+                        val result = String.format(
+                            Locale.US,
+                            "%.6f, %.6f",
+                            location.latitude,
+                            location.longitude
+                        )
+                        coordinates = result
+                        val priorReason = motivoUso.lineSequence()
+                            .filterNot { it.startsWith("Ubicación: ") }
+                            .joinToString("\n")
+                            .trim()
+                        motivoUso = listOf(priorReason, "Ubicación: $result")
+                            .filter { it.isNotBlank() }
+                            .joinToString("\n")
+                        locationMessage = "Ubicación obtenida."
+                    }
+                }
+            }
+        } catch (e: SecurityException) {
+            handler.removeCallbacks(timeout)
+            completed = true
+            locationMessage = "No se concedió el permiso de ubicación."
+        } catch (e: IllegalArgumentException) {
+            handler.removeCallbacks(timeout)
+            completed = true
+            locationMessage = "El proveedor GPS no está disponible en este dispositivo."
+        }
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) {
+        val hasFineLocation = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        val hasCoarseLocation = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        if (hasFineLocation || hasCoarseLocation) {
+            openLocationSettings = false
+            obtainCurrentLocation()
+        } else {
+            val activity = context as? Activity
+            val shouldShowRationale = activity?.let {
+                ActivityCompat.shouldShowRequestPermissionRationale(
+                    it,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) || ActivityCompat.shouldShowRequestPermissionRationale(
+                    it,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            } ?: false
+            if (locationPermissionRequested && !shouldShowRationale) {
+                locationMessage = "Permiso denegado permanentemente. Puedes habilitarlo en Ajustes."
+                openLocationSettings = true
+            } else {
+                locationMessage = "Permiso de ubicación denegado."
+                openLocationSettings = false
+            }
+        }
+    }
 
     LaunchedEffect(estadoValidacion) {
         when (val estado = estadoValidacion) {
@@ -122,6 +258,50 @@ fun SolicitudScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            OutlinedButton(
+                onClick = {
+                    val hasFineLocation = ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
+                    val hasCoarseLocation = ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
+                    if (hasFineLocation || hasCoarseLocation) {
+                        obtainCurrentLocation()
+                    } else {
+                        locationPermissionRequested = true
+                        locationPermissionLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                            )
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Usar mi ubicación")
+            }
+            locationMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+            coordinates?.let {
+                Text("Coordenadas: $it", style = MaterialTheme.typography.bodySmall)
+            }
+            if (openLocationSettings) {
+                TextButton(
+                    onClick = {
+                        val settingsIntent = Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.fromParts("package", context.packageName, null)
+                        )
+                        context.startActivity(settingsIntent)
+                    }
+                ) {
+                    Text("Abrir ajustes de la aplicación")
+                }
+            }
 
             OutlinedTextField(
                 value = motivoUso,
