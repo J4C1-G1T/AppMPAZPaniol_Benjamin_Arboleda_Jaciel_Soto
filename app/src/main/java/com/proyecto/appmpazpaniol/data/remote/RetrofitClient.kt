@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
 
     // ÚNICA LÍNEA QUE DEBES CAMBIAR CUANDO REINICIES EL LAB DE AWS ACADEMY
-    private const val SERVER_IP = "100.59.198.100"
+    private const val SERVER_IP = "34.238.37.196"
 
     private const val URL_SOLICITUDES = "http://$SERVER_IP:8080/"
     private const val URL_INVENTARIO  = "http://$SERVER_IP:8081/"
